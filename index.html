@@ -7,18 +7,25 @@
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
     
     <style>
-        body { margin: 0; overflow: hidden; }
-        /* 啟動按鈕：解決行動裝置無法自動播放影片的問題 */
-        #startButton {
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            padding: 20px; background: #ff0000; color: white; border: none;
-            border-radius: 10px; z-index: 100; cursor: pointer; font-size: 18px;
-        }
-    </style>
+    /* 製作一個漂亮的啟動覆蓋層 */
+    #overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.8);
+        color: white;
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        z-index: 9999;
+        cursor: pointer;
+    }
+    .scan-icon { width: 100px; height: 100px; border: 2px solid #fff; margin-bottom: 20px; border-radius: 10px; }
+</style>
 </head>
 <body>
 
-    <button id="startButton">點擊啟動 AR 鏡頭與影片</button>
+    <div id="overlay">
+        <div class="scan-icon"></div>
+        <p>點擊螢幕開啟 AR 體驗</p>
+    </div>
 
     <a-scene mindar-image="imageTargetSrc: ./targets.mind;" 
              color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" 
@@ -36,29 +43,27 @@
     </a-scene>
 
     <script>
-        const startButton = document.querySelector('#startButton');
+        const overlay = document.querySelector('#overlay');
         const video = document.querySelector('#arVideo');
+
+        // 點擊全螢幕任何地方
+        overlay.addEventListener('click', () => {
+            // 1. 隱藏覆蓋層
+            overlay.style.display = 'none';
+            
+            // 2. 關鍵：在使用者點擊的當下「預熱」影片
+            // 這會告訴瀏覽器：這個影片已經獲得授權可以播放了
+            video.play().then(() => {
+                video.pause(); // 立即暫停，等待掃描到圖片再播
+            }).catch(err => {
+                console.log("影片預熱失敗:", err);
+            });
+        });
+
+        // 掃描到圖片的邏輯保持不變
         const targetEntity = document.querySelector('#target');
-
-        // 當使用者點擊按鈕時，啟動鏡頭並預熱影片播放權限
-        startButton.addEventListener('click', () => {
-            startButton.style.display = 'none';
-            // 由於瀏覽器限制，需先在使用者點擊時播放再暫停，後續 AR 才能自動啟動
-            video.play();
-            video.pause();
-            console.log("AR 啟動完成");
-        });
-
-        // 當辨識到圖片時，開始播放影片
         targetEntity.addEventListener("targetFound", event => {
-            console.log("發現圖片，播放影片");
             video.play();
-        });
-
-        // 當失去辨識時，暫停影片（節省手機效能）
-        targetEntity.addEventListener("targetLost", event => {
-            console.log("失去追蹤，暫停影片");
-            video.pause();
         });
     </script>
 </body>
