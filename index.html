@@ -2,66 +2,85 @@
 <html lang="zh-TW">
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebAR 影片疊加測試</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <title>WebAR 透明啟動測試</title>
+    
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
     
     <style>
-    /* 製作一個漂亮的啟動覆蓋層 */
-    #overlay {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0, 0, 0, 0);
-        color: white;
-        display: flex; flex-direction: column;
-        align-items: center; justify-content: center;
-        z-index: 9999;
-        cursor: pointer;
-    }    
-</style>
+        body { margin: 0; overflow: hidden; }
+        
+        /* 透明啟動層：全螢幕隱形玻璃，點擊解鎖權限 */
+        #overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0); /* 全透明 */
+            z-index: 9999;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
 
-    <div id="overlay">
-        
-    </div>
+    <div id="overlay"></div>
 
-    <a-scene mindar-image="imageTargetSrc: ./targets.mind;" 
-             color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" 
-             vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+    <a-scene 
+        mindar-image="imageTargetSrc: ./targets.mind; maxTrack: 1; filterMinCF:0.0001; filterBeta: 0.001;" 
+        color-space="sRGB" 
+        renderer="colorManagement: true, physicallyCorrectLights" 
+        vr-mode-ui="enabled: false" 
+        device-orientation-permission-ui="enabled: false">
         
         <a-assets>
-            <video id="arVideo" src="./your-video.mp4" preload="auto" loop="true" crossorigin="anonymous" playsinline></video>
+            <video id="testVideo" src="./your-video.mp4" 
+                preload="auto" loop="true" 
+                crossorigin="anonymous" playsinline>
+            </video>
         </a-assets>
 
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-        <a-entity id="target" mindar-image-target="targetIndex: 0">
-            <a-video src="#arVideo" width="1" height="0.56" position="0 0 0" rotation="0 0 0"></a-video>
-        </a-entity>
-    </a-scene>
+        </a-scene>
 
     <script>
+        const video = document.querySelector('#testVideo');
         const overlay = document.querySelector('#overlay');
-        const video = document.querySelector('#arVideo');
+        const sceneEl = document.querySelector('a-scene');
 
-        // 點擊全螢幕任何地方
-        overlay.addEventListener('click', () => {
-            // 1. 隱藏覆蓋層
-            overlay.style.display = 'none';
+        const targetCount = 5; 
+
+        // 自動產生 5 個偵測目標
+        for (let i = 0; i < targetCount; i++) {
+            const entity = document.createElement('a-entity');
+            entity.setAttribute('mindar-image-target', `targetIndex: ${i}`);
             
-            // 2. 關鍵：在使用者點擊的當下「預熱」影片
-            // 這會告訴瀏覽器：這個影片已經獲得授權可以播放了
-            video.play().then(() => {
-                video.pause(); // 立即暫停，等待掃描到圖片再播
-            }).catch(err => {
-                console.log("影片預熱失敗:", err);
-            });
-        });
+            const videoObj = document.createElement('a-video');
+            videoObj.setAttribute('src', '#testVideo');
+            videoObj.setAttribute('position', '0 0 0');
+            videoObj.setAttribute('height', '0.56');
+            videoObj.setAttribute('width', '1');
 
-        // 掃描到圖片的邏輯保持不變
-        const targetEntity = document.querySelector('#target');
-        targetEntity.addEventListener("targetFound", event => {
-            video.play();
+            entity.appendChild(videoObj);
+            sceneEl.appendChild(entity);
+
+            entity.addEventListener("targetFound", event => {
+                video.play();
+            });
+
+            entity.addEventListener("targetLost", event => {
+                video.pause();
+            });
+        }
+
+        // 點擊隱形層解鎖
+        overlay.addEventListener('click', () => {
+            overlay.style.display = 'none'; // 點擊後移除隱形牆
+            video.play().then(() => {
+                video.pause();
+                video.currentTime = 0;
+            }).catch(err => {
+                console.error("解鎖失敗:", err);
+            });
         });
     </script>
 </body>
