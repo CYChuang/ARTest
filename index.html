@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebAR 掃描跳轉</title>
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+    
+    <style>
+        body { margin: 0; overflow: hidden; }
+        /* 掃描前的提示 UI */
+        #scanning-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); color: white;
+            display: flex; align-items: center; justify-content: center;
+            z-index: 10; font-family: sans-serif;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="scanning-overlay">請對準目標圖片進行掃描...</div>
+
+    <a-scene mindar-image="imageTargetSrc: ./targets.mind; uiScanning: #scanning-overlay;" 
+             color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" 
+             vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+        
+        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+        <a-entity id="target-entity" mindar-image-target="targetIndex: 0">
+            </a-entity>
+    </a-scene>
+
+    <script>
+        const targetEntity = document.querySelector('#target-entity');
+        const overlay = document.querySelector('#scanning-overlay');
+
+        // 當偵測到目標圖片時觸發
+        targetEntity.addEventListener("targetFound", event => {
+            console.log("偵測成功，準備跳轉！");
+            overlay.innerHTML = "辨識成功，正在前往 YouTube...";
+            
+            // 設定您要跳轉的 YouTube 網址
+            const youtubeUrl = "https://www.youtube.com/watch?v=__n_fB3Scww";
+            
+            // 延遲 1 秒跳轉，讓用戶感覺到辨識過程
+            setTimeout(() => {
+                window.location.href = youtubeUrl;
+            }, 1000);
+        });
+
+        // 當失去追蹤時（可選）
+        targetEntity.addEventListener("targetLost", event => {
+            console.log("失去追蹤");
+        });
+    </script>
+</body>
+</html>
