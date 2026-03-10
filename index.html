@@ -2,56 +2,63 @@
 <html lang="zh-TW">
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebAR 掃描跳轉</title>
+    <title>WebAR 影片疊加測試</title>
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
     
     <style>
         body { margin: 0; overflow: hidden; }
-        /* 掃描前的提示 UI */
-        #scanning-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5); color: white;
-            display: flex; align-items: center; justify-content: center;
-            z-index: 10; font-family: sans-serif;
+        /* 啟動按鈕：解決行動裝置無法自動播放影片的問題 */
+        #startButton {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            padding: 20px; background: #ff0000; color: white; border: none;
+            border-radius: 10px; z-index: 100; cursor: pointer; font-size: 18px;
         }
     </style>
 </head>
 <body>
 
-    <div id="scanning-overlay">請對準目標圖片進行掃描...</div>
+    <button id="startButton">點擊啟動 AR 鏡頭與影片</button>
 
-    <a-scene mindar-image="imageTargetSrc: ./targets.mind; uiScanning: #scanning-overlay;" 
+    <a-scene mindar-image="imageTargetSrc: ./targets.mind;" 
              color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" 
              vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
         
+        <a-assets>
+            <video id="arVideo" src="./your-video.mp4" preload="auto" loop="true" crossorigin="anonymous" playsinline></video>
+        </a-assets>
+
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-        <a-entity id="target-entity" mindar-image-target="targetIndex: 0">
-            </a-entity>
+        <a-entity id="target" mindar-image-target="targetIndex: 0">
+            <a-video src="#arVideo" width="1" height="0.56" position="0 0 0" rotation="0 0 0"></a-video>
+        </a-entity>
     </a-scene>
 
     <script>
-        const targetEntity = document.querySelector('#target-entity');
-        const overlay = document.querySelector('#scanning-overlay');
+        const startButton = document.querySelector('#startButton');
+        const video = document.querySelector('#arVideo');
+        const targetEntity = document.querySelector('#target');
 
-        // 當偵測到目標圖片時觸發
-        targetEntity.addEventListener("targetFound", event => {
-            console.log("偵測成功，準備跳轉！");
-            overlay.innerHTML = "辨識成功，正在前往 YouTube...";
-            
-            // 設定您要跳轉的 YouTube 網址
-            const youtubeUrl = "https://www.youtube.com/watch?v=__n_fB3Scww";
-            
-            // 延遲 1 秒跳轉，讓用戶感覺到辨識過程
-            setTimeout(() => {
-                window.location.href = youtubeUrl;
-            }, 1000);
+        // 當使用者點擊按鈕時，啟動鏡頭並預熱影片播放權限
+        startButton.addEventListener('click', () => {
+            startButton.style.display = 'none';
+            // 由於瀏覽器限制，需先在使用者點擊時播放再暫停，後續 AR 才能自動啟動
+            video.play();
+            video.pause();
+            console.log("AR 啟動完成");
         });
 
-        // 當失去追蹤時（可選）
+        // 當辨識到圖片時，開始播放影片
+        targetEntity.addEventListener("targetFound", event => {
+            console.log("發現圖片，播放影片");
+            video.play();
+        });
+
+        // 當失去辨識時，暫停影片（節省手機效能）
         targetEntity.addEventListener("targetLost", event => {
-            console.log("失去追蹤");
+            console.log("失去追蹤，暫停影片");
+            video.pause();
         });
     </script>
 </body>
