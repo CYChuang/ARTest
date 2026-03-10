@@ -10,22 +10,21 @@
     /* 製作一個漂亮的啟動覆蓋層 */
     #overlay {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.8);
+        background: rgba(0, 0, 0, 0);
         color: white;
         display: flex; flex-direction: column;
         align-items: center; justify-content: center;
         z-index: 9999;
         cursor: pointer;
-    }
-    .scan-icon { width: 100px; height: 100px; border: 2px solid #fff; margin-bottom: 20px; border-radius: 10px; }
+    }    
 </style>
 </head>
 <body>
 
-    <div id="overlay">
+    <!-- <div id="overlay">
         <div class="scan-icon"></div>
         <p>點擊螢幕開啟 AR 體驗</p>
-    </div>
+    </div> -->
 
     <a-scene mindar-image="imageTargetSrc: ./targets.mind;" 
              color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" 
